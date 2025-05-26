@@ -3,30 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>N-Queens Probleme</title>
+  <title>N-Queens Problem</title>
   <style>
     body {
-      background-image: url("background.png");
-      background-size: cover;
-      background-position: center;
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(to top, #fbb1c6, #80c1e3);
       background-repeat: no-repeat;
+      background-attachment: fixed;
       text-align: center;
       font-family: Arial, sans-serif;
-      margin: 0;
       padding: 20px;
     }
     h1 {
       color: white;
+      margin-bottom: 10px;
     }
-    .controls, .speed-controls {
-      margin: 10px;
+    p, label {
+      color: white;
     }
-    input, button, label, span {
+    input, button, span {
       font-size: 16px;
       margin: 10px;
     }
     .board {
       margin: 20px auto;
+      display: grid;
     }
     .cell {
       width: 60px;
@@ -35,46 +37,45 @@
       justify-content: center;
       align-items: center;
       transition: background-color 0.2s;
+      cursor: pointer;
     }
     .cell img {
       width: 100%;
       height: 100%;
+      pointer-events: none;
+    }
+    .controls, .speed-controls, .message {
+      margin: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>N-Queens Problem</h1>
-  
-  <div class="controls">
-    <input type="number" id="sizeInput" placeholder="Enter N" min="1" value="8" style="width:100px; height:30px; font-size:16px;" />
-    <button onclick="startSolving()">Solve</button>
-  </div>
-  
-  <div class="speed-controls">
-    <label for="speedSlider" style="color: white;">Speed:</label>
- 
-    <input type="range" id="speedSlider" min="1" max="10" value="5" step="1">
-    <span id="speedValue">5</span>
-    <button id="pauseButton" onclick="togglePause()">Pause</button>
-  </div>
-  `
-  <div id="boardContainer"></div>
+  <div id="app"></div>
   
   <script>
-    let cells = [];
-    let paused = false;
-    let delay = (11 - 5) * 50;
-
-    document.getElementById("speedSlider").addEventListener("input", function() {
-      const speedLevel = parseInt(this.value);
-      delay = (11 - speedLevel) * 50;
-      document.getElementById("speedValue").textContent = speedLevel;
-    });
-
+    let n = 0;                  
+    let initialState = [];      
+    let finalState = null;      
+    let fixed = [];             
+    let cells = [];            
+    let delay = 300;           
+    let paused = false;              
+    
+    function clearApp() {
+      document.getElementById("app").innerHTML = "";
+    }
+    
+    function createElement(tag, text, className) {
+      const el = document.createElement(tag);
+      if (text) el.innerText = text;
+      if (className) el.className = className;
+      return el;
+    }
+    
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
-
+    
     async function sleepWithPause(ms) {
       let elapsed = 0;
       while (elapsed < ms) {
@@ -87,13 +88,247 @@
         }
       }
     }
-
+    
+    //pause/Resume button
     function togglePause() {
       paused = !paused;
-      document.getElementById("pauseButton").textContent = paused ? "Resume" : "Pause";
+      const pauseButton = document.getElementById("pauseButton");
+      if (pauseButton) {
+        pauseButton.textContent = paused ? "Resume" : "Pause";
+      }
     }
-
-    // Light squares: #ebecd0, Dark squares: #789454.
+    
+    function stateIsValid(state) {
+      for (let i = 0; i < state.length; i++) {
+        if (state[i] === -1) continue;
+        for (let j = i + 1; j < state.length; j++) {
+          if (state[j] === -1) continue;
+          if (state[i] === state[j] || Math.abs(state[i] - state[j]) === Math.abs(i - j))
+            return false;
+        }
+      }
+      return true;
+    }
+    
+    function stateIsComplete(state) {
+      return state.every(val => val !== -1);
+    }
+    
+    function arraysEqual(a, b) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
+    }
+    
+    function isSafe(state, row, col) {
+      for (let i = 0; i < row; i++) {
+        if (state[i] === col || Math.abs(state[i] - col) === Math.abs(i - row))
+          return false;
+      }
+      return true;
+    }
+    
+    function page1_initialN() {
+      clearApp();
+      const app = document.getElementById("app");
+      app.appendChild(createElement("h1", "1. Initial State"));
+      app.appendChild(createElement("p", "Enter board size N."));
+      
+      const controlsDiv = document.createElement("div");
+      controlsDiv.className = "controls";
+      
+      const nInput = document.createElement("input");
+      nInput.type = "number";
+      nInput.placeholder = "Enter N";
+      nInput.min = "1";
+      nInput.value = "8";  
+      controlsDiv.appendChild(nInput);
+      
+      const createBtn = document.createElement("button");
+      createBtn.innerText = "Create Board";
+      createBtn.onclick = function() {
+        const N = parseInt(nInput.value);
+        if (isNaN(N) || N <= 0) {
+          alert("Please enter a valid number greater than 0.");
+          return;
+        }
+        n = N;
+        initialState = new Array(N).fill(-1);
+        fixed = new Array(N).fill(false); 
+        page2_initialSetup();
+      };
+      controlsDiv.appendChild(createBtn);
+      app.appendChild(controlsDiv);
+      
+      app.appendChild(createElement("div", "", "message"));
+    }
+    
+    function page2_initialSetup() {
+      clearApp();
+      const app = document.getElementById("app");
+      app.appendChild(createElement("h1", "1. Initial State"));
+      app.appendChild(createElement("p", "click on squares to place/remove a queen (maximum 1 queen per row)."));
+      
+      const boardDiv = document.createElement("div");
+      boardDiv.id = "boardContainer";
+      app.appendChild(boardDiv);
+      
+      createBoard(n);
+      updateBoardDisplay(initialState);
+      
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          cells[r][c].onclick = function() {
+            if (initialState[r] === c) {
+              initialState[r] = -1;
+            } else {
+              initialState[r] = c;
+            }
+            updateBoardDisplay(initialState);
+          };
+        }
+      }
+      
+      const setInitialBtn = document.createElement("button");
+      setInitialBtn.innerText = "Set Initial State";
+      setInitialBtn.onclick = function() {
+        if (!stateIsValid(initialState)) {
+          alert("Invalid configuration: Some queens are threatening each other.");
+          return;
+        }
+        page3_finalSetup();
+      };
+      app.appendChild(setInitialBtn);
+      
+      const backBtn = document.createElement("button");
+      backBtn.innerText = "Back";
+      backBtn.onclick = page1_initialN;
+      app.appendChild(backBtn);
+    }
+    
+    function page3_finalSetup() {
+      clearApp();
+      const app = document.getElementById("app");
+      app.appendChild(createElement("h1", "2. Final State"));
+      app.appendChild(createElement("p", "Place one queen per row (no conflicts allowed)."));
+      
+      finalState = new Array(n).fill(-1);
+      
+      const boardDiv = document.createElement("div");
+      boardDiv.id = "boardContainer";
+      app.appendChild(boardDiv);
+      
+      createBoard(n);
+      updateBoardDisplay(finalState);
+      
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          cells[r][c].onclick = function() {
+            if (finalState[r] === c) {
+              finalState[r] = -1;
+            } else {
+              finalState[r] = c;
+            }
+            updateBoardDisplay(finalState);
+          };
+        }
+      }
+      
+      const setFinalBtn = document.createElement("button");
+      setFinalBtn.innerText = "Set Final State";
+      setFinalBtn.onclick = function() {
+        if (!stateIsComplete(finalState)) {
+          alert("Please place exactly one queen per row.");
+          return;
+        }
+        if (!stateIsValid(finalState)) {
+          alert("Invalid final state: Some queens are threatening each other.");
+          return;
+        }
+        page4_solution();
+      };
+      
+      const noFinalBtn = document.createElement("button");
+      noFinalBtn.innerText = "No Final State";
+      noFinalBtn.onclick = function() {
+        finalState = null;
+        page4_solution();
+      };
+      
+      app.appendChild(setFinalBtn);
+      app.appendChild(noFinalBtn);
+      
+      const backBtn = document.createElement("button");
+      backBtn.innerText = "Back";
+      backBtn.onclick = page2_initialSetup;
+      app.appendChild(backBtn);
+    }
+    
+    function page4_solution() {
+      clearApp();
+      const app = document.getElementById("app");
+      app.appendChild(createElement("h1", "Solving Process"));
+      
+      const speedDiv = document.createElement("div");
+      speedDiv.className = "speed-controls";
+      
+      const speedLabel = createElement("label", "Speed: ");
+      speedLabel.htmlFor = "speedSlider";
+      speedDiv.appendChild(speedLabel);
+      
+      const speedSlider = document.createElement("input");
+      speedSlider.type = "range";
+      speedSlider.id = "speedSlider";
+      speedSlider.min = "1";
+      speedSlider.max = "10";
+      speedSlider.value = "5";
+      speedSlider.step = "1";
+      speedDiv.appendChild(speedSlider);
+      
+      const speedValue = createElement("span", "5");
+      speedValue.id = "speedValue";
+      speedDiv.appendChild(speedValue);
+      
+      const pauseBtn = document.createElement("button");
+      pauseBtn.id = "pauseButton";
+      pauseBtn.innerText = "Pause";
+      pauseBtn.onclick = togglePause;
+      speedDiv.appendChild(pauseBtn);
+      
+      app.appendChild(speedDiv);
+      
+      speedSlider.oninput = function() {
+        const level = parseInt(speedSlider.value);
+        delay = (11 - level) * 50;
+        speedValue.innerText = level;
+      };
+      
+      fixed = new Array(n).fill(false);
+      const solution = initialState.slice();
+      
+      const boardDiv = document.createElement("div");
+      boardDiv.id = "boardContainer";
+      app.appendChild(boardDiv);
+      
+      console.log("Phase 3: boardContainer created:", document.getElementById("boardContainer"));
+      
+      createBoard(n);
+      updateBoardDisplay(solution);
+      
+      const step3BackDiv = document.createElement("div");
+      const backBtn = document.createElement("button");
+      backBtn.innerText = "Back";
+      backBtn.onclick = page3_finalSetup;
+      step3BackDiv.appendChild(backBtn);
+      app.appendChild(step3BackDiv);
+      
+      setTimeout(function() {
+        backtracking(solution, 0, n);
+      }, 500);
+    }
+    
     function createBoard(N) {
       const boardContainer = document.getElementById("boardContainer");
       boardContainer.innerHTML = "";
@@ -101,69 +336,67 @@
       boardContainer.style.gridTemplateColumns = `repeat(${N}, 60px)`;
       boardContainer.style.width = `${N * 60}px`;
       boardContainer.style.height = `${N * 60}px`;
-      boardContainer.classList.add("board");
+      boardContainer.className = "board";
       
       cells = [];
-      for (let row = 0; row < N; row++) {
+      for (let r = 0; r < N; r++) {
         let rowArray = [];
-        for (let col = 0; col < N; col++) {
+        for (let c = 0; c < N; c++) {
           const cell = document.createElement("div");
           cell.className = "cell";
-          cell.style.backgroundColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
+          cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#ebecd0" : "#789454";
           boardContainer.appendChild(cell);
           rowArray.push(cell);
         }
         cells.push(rowArray);
       }
     }
-
-    async function startSolving() {
-      const N = parseInt(document.getElementById("sizeInput").value);
-      if (isNaN(N) || N <= 0) {
-        alert("Please enter a valid number greater than 0.");
-        return;
-      }
-      createBoard(N);
-      const solution = new Array(N).fill(-1);
-      
-      paused = false;
-      document.getElementById("pauseButton").textContent = "Pause";
-      
-      const solved = await solveRecursively(solution, 0, N);
-      if (!solved) {
-        alert("No solution found!");
-      }
-    }
-
-    async function solveRecursively(solution, row, N) {
-      if (row >= N) return true;
-      
-      for (let col = 0; col < N; col++) {
-        const cell = cells[row][col];
-        const originalColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
-        
-        //checking square turns yellow
-        cell.style.backgroundColor = "yellow";
-        await sleepWithPause(delay);
-        
-        if (isSafe(solution, row, col)) {
-          //placing queen
-          solution[row] = col;
+    
+    function updateBoardDisplay(state) {
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          const cell = cells[r][c];
+          cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#ebecd0" : "#789454";
           cell.innerHTML = "";
+        }
+        if (state[r] !== -1) {
+          const col = state[r];
+          const cell = cells[r][col];
           const queenImg = document.createElement("img");
           queenImg.src = "queen.png";
           queenImg.alt = "Queen";
           cell.appendChild(queenImg);
+        }
+      }
+    }
+    
+    async function backtracking(state, row, N) {
+      if (row >= N) {
+        if (finalState && !arraysEqual(state, finalState)) {
+        } else {
+          alert("Solution found!");
+          return true;
+        }
+      }
+      
+      for (let col = 0; col < N; col++) {
+        const cell = cells[row][col];
+        const originalColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
+        cell.style.backgroundColor = "yellow";
+        await sleepWithPause(delay);
+        
+        if (isSafe(state, row, col)) {
+          state[row] = col;
+          updateBoardDisplay(state);
           cell.style.backgroundColor = originalColor;
           await sleepWithPause(delay);
           
-          if (await solveRecursively(solution, row + 1, N)) return true;
+          if (await backtracking(state, row + 1, N)) return true;
           
-          //backtracking
           cell.style.backgroundColor = "red";
           await sleepWithPause(delay);
-          solution[row] = -1;
-          cell.innerHTML = "";
+          state[row] = -1;
+          updateBoardDisplay(state);
           cell.style.backgroundColor = originalColor;
           await sleepWithPause(delay);
         } else {
@@ -172,15 +405,8 @@
       }
       return false;
     }
-
-    function isSafe(solution, row, col) {
-      for (let i = 0; i < row; i++) {
-        if (solution[i] === col || Math.abs(solution[i] - col) === Math.abs(i - row)) {
-          return false;
-        }
-      }
-      return true;
-    }
+    
+    window.onload = page1_initialN;
   </script>
 </body>
 </html>
