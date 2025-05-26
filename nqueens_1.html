@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N-Queens Probleme</title>
+  <style>
+    body {
+      background-image: url("background.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: white;
+    }
+    .controls, .speed-controls {
+      margin: 10px;
+    }
+    input, button, label, span {
+      font-size: 16px;
+      margin: 10px;
+    }
+    .board {
+      margin: 20px auto;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+    .cell img {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>N-Queens Problem</h1>
+  
+  <div class="controls">
+    <input type="number" id="sizeInput" placeholder="Enter N" min="1" value="8" style="width:100px; height:30px; font-size:16px;" />
+    <button onclick="startSolving()">Solve</button>
+  </div>
+  
+  <div class="speed-controls">
+    <label for="speedSlider" style="color: white;">Speed:</label>
+ 
+    <input type="range" id="speedSlider" min="1" max="10" value="5" step="1">
+    <span id="speedValue">5</span>
+    <button id="pauseButton" onclick="togglePause()">Pause</button>
+  </div>
+  `
+  <div id="boardContainer"></div>
+  
+  <script>
+    let cells = [];
+    let paused = false;
+    let delay = (11 - 5) * 50;
+
+    document.getElementById("speedSlider").addEventListener("input", function() {
+      const speedLevel = parseInt(this.value);
+      delay = (11 - speedLevel) * 50;
+      document.getElementById("speedValue").textContent = speedLevel;
+    });
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function sleepWithPause(ms) {
+      let elapsed = 0;
+      while (elapsed < ms) {
+        if (paused) {
+          await sleep(50);
+        } else {
+          const delta = Math.min(50, ms - elapsed);
+          await sleep(delta);
+          elapsed += delta;
+        }
+      }
+    }
+
+    function togglePause() {
+      paused = !paused;
+      document.getElementById("pauseButton").textContent = paused ? "Resume" : "Pause";
+    }
+
+    // Light squares: #ebecd0, Dark squares: #789454.
+    function createBoard(N) {
+      const boardContainer = document.getElementById("boardContainer");
+      boardContainer.innerHTML = "";
+      boardContainer.style.display = "grid";
+      boardContainer.style.gridTemplateColumns = `repeat(${N}, 60px)`;
+      boardContainer.style.width = `${N * 60}px`;
+      boardContainer.style.height = `${N * 60}px`;
+      boardContainer.classList.add("board");
+      
+      cells = [];
+      for (let row = 0; row < N; row++) {
+        let rowArray = [];
+        for (let col = 0; col < N; col++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.style.backgroundColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
+          boardContainer.appendChild(cell);
+          rowArray.push(cell);
+        }
+        cells.push(rowArray);
+      }
+    }
+
+    async function startSolving() {
+      const N = parseInt(document.getElementById("sizeInput").value);
+      if (isNaN(N) || N <= 0) {
+        alert("Please enter a valid number greater than 0.");
+        return;
+      }
+      createBoard(N);
+      const solution = new Array(N).fill(-1);
+      
+      paused = false;
+      document.getElementById("pauseButton").textContent = "Pause";
+      
+      const solved = await solveRecursively(solution, 0, N);
+      if (!solved) {
+        alert("No solution found!");
+      }
+    }
+
+    async function solveRecursively(solution, row, N) {
+      if (row >= N) return true;
+      
+      for (let col = 0; col < N; col++) {
+        const cell = cells[row][col];
+        const originalColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
+        
+        //checking square turns yellow
+        cell.style.backgroundColor = "yellow";
+        await sleepWithPause(delay);
+        
+        if (isSafe(solution, row, col)) {
+          //placing queen
+          solution[row] = col;
+          cell.innerHTML = "";
+          const queenImg = document.createElement("img");
+          queenImg.src = "queen.png";
+          queenImg.alt = "Queen";
+          cell.appendChild(queenImg);
+          cell.style.backgroundColor = originalColor;
+          await sleepWithPause(delay);
+          
+          if (await solveRecursively(solution, row + 1, N)) return true;
+          
+          //backtracking
+          cell.style.backgroundColor = "red";
+          await sleepWithPause(delay);
+          solution[row] = -1;
+          cell.innerHTML = "";
+          cell.style.backgroundColor = originalColor;
+          await sleepWithPause(delay);
+        } else {
+          cell.style.backgroundColor = originalColor;
+        }
+      }
+      return false;
+    }
+
+    function isSafe(solution, row, col) {
+      for (let i = 0; i < row; i++) {
+        if (solution[i] === col || Math.abs(solution[i] - col) === Math.abs(i - row)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  </script>
+</body>
+</html>
