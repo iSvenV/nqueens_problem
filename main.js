@@ -4,6 +4,7 @@ class main {
         this.initialState = [];
         this.finalState = null;
         this.cells = [];
+        this.miniBoardElements = [];
         this.delay = 300;
         this.paused = false;
         this.stopProcess = false;
@@ -53,52 +54,74 @@ class main {
         }
     }
 
-    createBoard(N) {
-        const boardContainer = document.getElementById("boardContainer");
+    createBoard(N, containerId = "boardContainer", cellClassName = "cell", isMainBoard = true) {
+        const boardContainer = document.getElementById(containerId);
         if (!boardContainer) {
-            console.error("Board container not found during createBoard!");
-            this.appElement.appendChild(this.createElement("div", "", "board"));
-            return;
+            console.error("Board container not found:", containerId);
+            if (isMainBoard && this.appElement) {
+                this.appElement.appendChild(this.createElement("div", "", "board"));
+            }
+            return [];
         }
         boardContainer.innerHTML = ""; 
         boardContainer.style.display = "grid";
-        boardContainer.style.gridTemplateColumns = `repeat(${N}, 60px)`;
-        boardContainer.style.width = `${N * 60}px`;
-        boardContainer.style.height = `${N * 60}px`;
-        boardContainer.className = "board";
+        const cellSize = isMainBoard ? 60 : 12; 
+        boardContainer.style.gridTemplateColumns = `repeat(${N}, ${cellSize}px)`;
+        boardContainer.style.width = `calc(${N} * ${cellSize}px)`; 
+        boardContainer.style.height = `calc(${N} * ${cellSize}px)`;
+        boardContainer.className = isMainBoard ? "board" : "mini-board";
 
-        this.cells = [];
+        let boardCells = [];
         for (let r = 0; r < N; r++) {
             let rowArray = [];
             for (let c = 0; c < N; c++) {
-                const cell = this.createElement("div", "", "cell");
-                cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#ebecd0" : "#789454";
+                const cell = this.createElement("div", "", cellClassName);
+                cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#eeeed2" : "#769656";
+                if (!isMainBoard) { 
+                    cell.style.width = `${cellSize}px`;
+                    cell.style.height = `${cellSize}px`;
+                }
                 boardContainer.appendChild(cell);
                 rowArray.push(cell);
             }
-            this.cells.push(rowArray);
+            boardCells.push(rowArray);
         }
+        if (isMainBoard) {
+            this.cells = boardCells;
+        }
+        return boardCells;
     }
 
-    updateBoardDisplay(state) {
-        if (!this.cells || this.cells.length === 0 || this.cells.length !== this.n) {
+    updateBoardDisplay(state, boardCells = null, boardSize = 0, isMainBoard = true) {
+        const currentCells = isMainBoard ? this.cells : boardCells;
+        const currentN = isMainBoard ? this.n : boardSize;
+
+        if (!currentCells || currentCells.length === 0 || currentCells.length !== currentN) {
             return;
         }
-        for (let r = 0; r < this.n; r++) {
-            for (let c = 0; c < this.n; c++) {
-                const cell = this.cells[r][c];
-                if (!cell) continue;
-                cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#ebecd0" : "#789454";
-                cell.innerHTML = ""; 
+
+        for (let r = 0; r < currentN; r++) {
+            for (let c = 0; c < currentN; c++) {
+                if (currentCells[r] && currentCells[r][c]) {
+                    const cell = currentCells[r][c];
+                    cell.style.backgroundColor = ((r + c) % 2 === 0) ? "#eeeed2" : "#769656";
+                    cell.innerHTML = ""; 
+                    cell.classList.remove("queen"); 
+                }
             }
-            if (state[r] !== -1 && state[r] < this.n) { 
+            if (state && typeof state[r] !== 'undefined' && state[r] !== -1 && state[r] < currentN) { 
                 const col = state[r];
-                const cell = this.cells[r][col];
-                if (!cell) continue;
-                const queenImg = this.createElement("img");
-                queenImg.src = "queen.png"; 
-                queenImg.alt = "Queen";
-                cell.appendChild(queenImg);
+                if (currentCells[r] && currentCells[r][col]) {
+                    const cellToUpdate = currentCells[r][col];
+                    if (isMainBoard) {
+                        const queenImg = this.createElement("img");
+                        queenImg.src = "queen.png"; 
+                        queenImg.alt = "Queen";
+                        cellToUpdate.appendChild(queenImg);
+                    } else {
+                        cellToUpdate.classList.add("queen");
+                    }
+                }
             }
         }
     }
@@ -107,23 +130,20 @@ class main {
         this.clearApp();
         this.paused = false; 
         this.appElement.appendChild(this.createElement("h1", "1. Initial State"));
-        this.appElement.appendChild(this.createElement("p", "Enter board size N."));
+        this.appElement.appendChild(this.createElement("p", "Enter board size N"));
 
         const controlsDiv = this.createElement("div", "", "controls");
         const nInput = this.createElement("input");
         nInput.type = "number";
         nInput.placeholder = "Enter N";
-        nInput.min = "1";
-        nInput.value = this.n > 0 ? this.n.toString() : "6";
+        nInput.min = "4";
+        nInput.max = "8";
+        nInput.value = this.n > 0 ? this.n.toString() : "4";
         controlsDiv.appendChild(nInput);
 
         const createBtn = this.createElement("button", "Create Board");
         createBtn.onclick = () => {
             const N = parseInt(nInput.value);
-            if (isNaN(N) || N <= 0) {
-                alert("Please enter a valid number greater than 0.");
-                return;
-            }
             this.n = N;
             this.initialState = new Array(N).fill(-1);
             this.page2_initialSetup();
@@ -143,8 +163,8 @@ class main {
         boardDiv.id = "boardContainer"; 
         this.appElement.appendChild(boardDiv);
 
-        this.createBoard(this.n);
-        this.updateBoardDisplay(this.initialState);
+        this.createBoard(this.n, "boardContainer", "cell", true);
+        this.updateBoardDisplay(this.initialState, this.cells, this.n, true);
 
         for (let r = 0; r < this.n; r++) {
             for (let c = 0; c < this.n; c++) {
@@ -153,8 +173,8 @@ class main {
                         this.initialState[r] = -1;
                     } else {
                         this.initialState[r] = c;
-                    }
-                    this.updateBoardDisplay(this.initialState);
+                    }   
+                    this.updateBoardDisplay(this.initialState, this.cells, this.n, true);
                 };
             }
         }
@@ -189,8 +209,8 @@ class main {
         boardDiv.id = "boardContainer";
         this.appElement.appendChild(boardDiv);
 
-        this.createBoard(this.n);
-        this.updateBoardDisplay(this.finalState); 
+        this.createBoard(this.n, "boardContainer", "cell", true);
+        this.updateBoardDisplay(this.finalState, this.cells, this.n, true); 
 
         for (let r = 0; r < this.n; r++) {
             for (let c = 0; c < this.n; c++) {
@@ -200,7 +220,7 @@ class main {
                     } else {
                         this.finalState[r] = c; 
                     }
-                    this.updateBoardDisplay(this.finalState);
+                    this.updateBoardDisplay(this.finalState, this.cells, this.n, true);
                 };
             }
         }
@@ -239,65 +259,17 @@ class main {
         this.appElement.appendChild(this.createElement("p", "Choose an algorithm"));
 
         const buttonContainer = this.createElement("div", "", "controls"); 
-
         const backtrackBtn = this.createElement("button", "Backtracking");
+        const gaBtn = this.createElement("button", "Genetic Algorithm"); 
+        const backToPage3Btn = this.createElement("button", "Back");
+
         backtrackBtn.onclick = () => {
-            this.page5_solution();
+            this.page5_backtrack();
         };
         buttonContainer.appendChild(backtrackBtn);
 
-        const gaBtn = this.createElement("button", "Genetic");
-        const backToPage3Btn = this.createElement("button", "Back");
-
-        gaBtn.onclick = async () => {
-            const feedbackP = this.createElement("p", "Genetic Algorithm running...");
-            this.appElement.appendChild(feedbackP);
-            
-            // Disable buttons during GA
-            backtrackBtn.disabled = true;
-            gaBtn.disabled = true;
-            backToPage3Btn.disabled = true;
-
-            const populationSize = 100; 
-            const maxGenerations = 500; 
-            const geneticSolver = new genetic(populationSize, this.n, this, this.initialState);
-            
-            this.stopProcess = false;
-            const solution1D = await geneticSolver.runEvolution(maxGenerations); 
-
-            backtrackBtn.disabled = false;
-            gaBtn.disabled = false;
-            backToPage3Btn.disabled = false;
-
-            if (feedbackP.parentNode === this.appElement) {
-                this.appElement.removeChild(feedbackP);
-            }
-
-            if (this.stopProcess) {
-                console.log("GA was stopped by user before completion.");
-                const bestSoFar = geneticSolver.getBestSolution1D();
-                if (bestSoFar) {
-                    this.updateBoardDisplay(bestSoFar);
-                    alert("GA stopped. Displaying best attempt found so far.");
-                } else {
-                    this.updateBoardDisplay(this.initialState);
-                    alert("GA stopped. No intermediate solution to display.");
-                }
-                return;
-            }
-
-            if (solution1D && geneticSolver.calculateFitness(solution1D) === 0) {
-                alert("Genetic Algorithm found a solution!");
-                this.updateBoardDisplay(solution1D);
-            } else {
-                alert("Genetic Algorithm did not find a perfect solution within the generation limit. Displaying best attempt found.");
-                const bestSolution = geneticSolver.getBestSolution1D();
-                if (bestSolution) {
-                    this.updateBoardDisplay(bestSolution);
-                } else {
-                    this.updateBoardDisplay(this.initialState); 
-                }
-            }
+        gaBtn.onclick = () => { 
+            this.page5_genetic();   
         };
         buttonContainer.appendChild(gaBtn);
         this.appElement.appendChild(buttonContainer);
@@ -307,12 +279,12 @@ class main {
         this.appElement.appendChild(backToPage3Btn);
     }
 
-    page5_solution() {
+    page5_backtrack() {
         this.clearApp();
         this.paused = false; 
         this.stopProcess = false; 
 
-        this.appElement.appendChild(this.createElement("h1", ""));
+        this.appElement.appendChild(this.createElement("h1", "Solving Process (Backtracking)"));
 
         const speedDiv = this.createElement("div", "", "speed-controls");
         const speedLabel = this.createElement("label", "Speed: ");
@@ -345,16 +317,16 @@ class main {
         this.appElement.appendChild(speedDiv);
 
         const boardDiv = this.createElement("div");
-        boardDiv.id = "boardContainer";
+        boardDiv.id = "boardContainer"; 
         this.appElement.appendChild(boardDiv);
 
-        this.createBoard(this.n);
+        this.createBoard(this.n, "boardContainer", "cell", true);
         const solutionState = this.initialState.slice();
-        this.updateBoardDisplay(solutionState);
+        this.updateBoardDisplay(solutionState, this.cells, this.n, true);
 
         const backBtnDiv = this.createElement("div"); 
         const backBtn = this.createElement("button", "Back");
-        
+
         backBtn.onclick = () => {
             this.stopProcess = true; 
             this.paused = false;    
@@ -379,7 +351,7 @@ class main {
 
         if (allRowsPreFilled) { 
             if(this.solver.stateIsValid(solutionState)) { 
-                 if (this.finalState && !this.solver.arraysEqual(solutionState, this.finalState)) {
+                if (this.finalState && !this.solver.arraysEqual(solutionState, this.finalState)) {
                     alert("Initial state is a solution, but not the target one. The solver will attempt to find the target if specified, or other solutions.");
                 } else {
                     alert("Initial state is already a valid solution!");
@@ -389,20 +361,15 @@ class main {
                 return; 
             }
         }
-        
+
         setTimeout(async () => {
             if (this.stopProcess) {
-                console.log("Solver launch aborted as stop was requested before starting.");
                 return;
             }
-
-            const found = await this.solver.solve(solutionState, startRow);
-
+            const found = await this.solver.solve(solutionState, startRow); 
             if (this.stopProcess) {
-                console.log("Solver process was stopped by the user during execution.");
                 return;
             }
-
             if (!found) {
                 if (this.finalState && this.solver.arraysEqual(solutionState, this.finalState)) {
                 } else if (!(this.solver.stateIsValid(solutionState) && this.solver.stateIsComplete(solutionState))) {
@@ -410,6 +377,120 @@ class main {
                 }
             }
         }, 500);
+    }
+
+    async page5_genetic() {
+        this.clearApp();
+        this.paused = false; 
+        this.stopProcess = false;
+        this.miniBoardElements = [];
+
+        this.appElement.appendChild(this.createElement("h1", "Solving Process (Genetic Algorithm)"));
+
+        this.appElement.appendChild(this.createElement("h2", "Best Solution:"));
+        const mainBoardDivGA = this.createElement("div");
+        mainBoardDivGA.id = "gaMainBoardContainer"; 
+        this.appElement.appendChild(mainBoardDivGA);
+        this.createBoard(this.n, "gaMainBoardContainer", "cell", true); 
+        if (this.initialState && this.initialState.length === this.n) {
+            this.updateBoardDisplay(this.initialState, this.cells, this.n, true);
+        } else {
+            this.updateBoardDisplay(new Array(this.n).fill(-1), this.cells, this.n, true);
+        }
+
+        const progressDiv = this.createElement("div", "", "ga-progress-container");
+        progressDiv.id = "gaProgressInfo";
+        this.appElement.appendChild(progressDiv);
+
+        const populationSize = 50; 
+        const maxGenerations = 10; 
+
+        this.appElement.appendChild(this.createElement("h3", `Population(${populationSize}):`));
+        const miniBoardsArea = this.createElement("div", "", "mini-boards-display-area");
+        miniBoardsArea.id = "gaMiniBoardsContainer";
+        this.appElement.appendChild(miniBoardsArea);
+
+        for (let i = 0; i < populationSize; i++) {
+            const wrapper = this.createElement("div", "", "mini-board-wrapper");
+            const boardElementContainer = this.createElement("div");
+            boardElementContainer.id = `miniBoardContainer_${i}`; 
+            const fitnessElement = this.createElement("p", `Attacks: -`, "mini-board-fitness");
+            fitnessElement.id = `miniBoardFitness_${i}`;
+            
+            wrapper.appendChild(boardElementContainer);
+            wrapper.appendChild(fitnessElement);
+            miniBoardsArea.appendChild(wrapper);
+            this.miniBoardElements[i] = this.createBoard(this.n, `miniBoardContainer_${i}`, "mini-cell", false);
+        }
+        
+        const backBtnDiv = this.createElement("div"); 
+        const backBtn = this.createElement("button", "Back");
+        backBtn.onclick = () => {
+            this.stopProcess = true; 
+            this.page4_algorithm();
+        };
+        backBtnDiv.appendChild(backBtn);
+        this.appElement.appendChild(backBtnDiv);
+        
+        const gaSolverInstance = new GeneticAlgorithm(populationSize, this.n, this, this.initialState);
+        
+        const onGenCallback = (genNum, currentPopulation, currentFitnessScores, overallBestInd, overallBestFit) => {
+            if (progressDiv) { 
+                progressDiv.innerHTML = 
+                    `<p>Generation: ${genNum} / ${maxGenerations}</p>
+                    <p>Overall Best Attacks: ${overallBestFit} -> [${overallBestInd ? overallBestInd.join(', ') : 'N/A'}]</p>`;
+            }
+            if (overallBestInd) {
+                this.updateBoardDisplay(overallBestInd, this.cells, this.n, true); 
+            }
+
+            for (let i = 0; i < populationSize; i++) {
+                const fitnessElement = document.getElementById(`miniBoardFitness_${i}`);
+                if (currentPopulation[i] && typeof currentFitnessScores[i] !== 'undefined') {
+                    const individualToShow = currentPopulation[i];
+                    const individualFitness = currentFitnessScores[i];
+                    if (this.miniBoardElements[i]) { 
+                        this.updateBoardDisplay(individualToShow, this.miniBoardElements[i], this.n, false);
+                    }
+                    if (fitnessElement) fitnessElement.innerText = `Attacks: ${individualFitness}`;
+                } else {
+                    if (this.miniBoardElements[i]) {
+                        this.updateBoardDisplay(new Array(this.n).fill(-1), this.miniBoardElements[i], this.n, false);
+                    }
+                    if (fitnessElement) fitnessElement.innerText = `Attacks: -`;
+                }
+            }
+        };
+
+        progressDiv.innerHTML = "<p>Starting Genetic Algorithm...</p>";
+        const solution1D = await gaSolverInstance.runEvolution(maxGenerations, 0, onGenCallback); 
+
+        if (this.stopProcess) {
+            console.log("GA was stopped by user.");
+            if (progressDiv) progressDiv.innerHTML += "<p>Process stopped by user.</p>";
+            return; 
+        }
+
+        if (solution1D && gaSolverInstance.calculateFitness(solution1D) === 0) {
+            this.updateBoardDisplay(solution1D, this.cells, this.n, true); 
+            if (progressDiv) {
+                progressDiv.innerHTML = 
+                    `<p>Solution Fount at Generation ${gaSolverInstance.generationCount}!</p>
+                    <p>Attacks: 0</p>`;
+            }
+        } else {
+            const bestSolution = gaSolverInstance.getBestSolution1D();
+            if (bestSolution) {
+                this.updateBoardDisplay(bestSolution, this.cells, this.n, true);
+            }
+            if (progressDiv) {
+                const bestSolArray = gaSolverInstance.getBestSolution1D();
+                progressDiv.innerHTML = 
+                    `<p>Max ${maxGenerations} generations reached. Best attempt shown.</p>
+                    <p>Overall Best Attacks: ${gaSolverInstance.bestFitnessOverall}</p>
+                    <p>Best Board: [${bestSolArray ? bestSolArray.join(', ') : 'N/A'}]</p>`;
+            }
+        }
     }
 }
 

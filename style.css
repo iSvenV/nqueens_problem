@@ -48,3 +48,70 @@ input, button, span {
 .controls, .speed-controls, .message {
   margin: 10px;
 }
+
+/* GA */
+.ga-progress-container {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    text-align: left;
+}
+
+.ga-progress-container p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.mini-boards-display-area {
+    margin-top: 20px;
+    display: flex; /* Use flexbox */
+    flex-wrap: wrap; /* Allow boards to wrap to the next line */
+    justify-content: center; /* Center boards in the container */
+    gap: 15px; /* Gap between mini-board wrappers */
+    padding: 10px; /* Some padding around the area */
+    /* background-color: rgba(0,0,0,0.05); */ /* Optional: slight background tint */
+    border-radius: 5px;
+}
+
+.mini-board-row { /* If you want to display boards in rows */
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+}
+
+.mini-board-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.mini-board {
+    display: grid;
+    border: 1px solid #777;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+.mini-cell {
+    width: 12px; /* Adjust for desired size */
+    height: 12px;
+    font-size: 8px; /* If you put numbers or text */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mini-cell.queen {
+    background-color: #333 !important; /* Dark color for queens */
+    color: white; /* If using text/symbols for queens */
+}
+
+.mini-board-fitness {
+    font-size: 0.8em;
+    color: #eee;
+}
