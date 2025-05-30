@@ -182,7 +182,7 @@ class main {
         const setInitialBtn = this.createElement("button", "Set Initial State");
         setInitialBtn.onclick = () => {
             if (!this.solver.stateIsValid(this.initialState)) {
-                alert("Invalid configuration: Some queens are threatening each other.");
+                alert("Invalid: Some queens are threatening each other");
                 return;
             }
             this.page3_finalSetup();
@@ -199,7 +199,7 @@ class main {
         this.paused = false; 
 
         this.appElement.appendChild(this.createElement("h1", "2. Final State"));
-        this.appElement.appendChild(this.createElement("p", "Place one queen per row (no conflicts allowed) for the desired final solution. Or skip."));
+        this.appElement.appendChild(this.createElement("p", "Place one queen per row (no conflicts allowed)"));
 
         if (!this.finalState || this.finalState.length !== this.n) {
             this.finalState = new Array(this.n).fill(-1);
@@ -228,11 +228,11 @@ class main {
         const setFinalBtn = this.createElement("button", "Set Final State");
         setFinalBtn.onclick = () => {
             if (!this.solver.stateIsComplete(this.finalState)) {
-                alert("Please place exactly one queen per row for the final state.");
+                alert("place one queen per row!");
                 return;
             }
             if (!this.solver.stateIsValid(this.finalState)) {
-                alert("Invalid final state: Some queens are threatening each other.");
+                alert("Invalid: Some queens are threatening each other.");
                 return;
             }
             this.page4_algorithm();
@@ -352,12 +352,12 @@ class main {
         if (allRowsPreFilled) { 
             if(this.solver.stateIsValid(solutionState)) { 
                 if (this.finalState && !this.solver.arraysEqual(solutionState, this.finalState)) {
-                    alert("Initial state is a solution, but not the target one. The solver will attempt to find the target if specified, or other solutions.");
+                    alert("Initial state is a solution, but not the target");
                 } else {
                     alert("Initial state is already a valid solution!");
                 }
             } else { 
-                alert("Initial state is complete but invalid. Please correct it or clear some queens for the solver.");
+                alert("Initial state is invalid");
                 return; 
             }
         }
@@ -373,7 +373,7 @@ class main {
             if (!found) {
                 if (this.finalState && this.solver.arraysEqual(solutionState, this.finalState)) {
                 } else if (!(this.solver.stateIsValid(solutionState) && this.solver.stateIsComplete(solutionState))) {
-                    alert("No further solution found from the current configuration that matches the criteria.");
+                    alert("Error");
                 }
             }
         }, 500);

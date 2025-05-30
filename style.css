@@ -9,7 +9,7 @@ body {
   padding: 20px;
 }
 
-h1 {
+h1, h2, h3 {
   color: white;
   margin-bottom: 10px;
 }
