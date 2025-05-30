@@ -1,6 +1,5 @@
-// GeneticAlgorithm.js
-// Remove 'export' if not using ES6 modules
 class GeneticAlgorithm {
+    //constrctor
     constructor(populationSize, boardSize, mainAppInterface, initialState1D = null) {
         this.populationSize = parseInt(populationSize) || 100;
         this.boardSize = parseInt(boardSize);
@@ -14,6 +13,7 @@ class GeneticAlgorithm {
         this.generationCount = 0;
     }
 
+    //initial population
     initializePopulation() {
         this.population = [];
         for (let i = 0; i < this.populationSize; i++) {
@@ -23,9 +23,8 @@ class GeneticAlgorithm {
             }
             this.population.push(individual);
         }
-        // Evaluate initial population to set initial bests
         this.fitnessScores = this.population.map(ind => this.calculateFitness(ind));
-        this.bestSolutionOverall = [...this.population[0]]; // Start with first as best
+        this.bestSolutionOverall = [...this.population[0]]; 
         this.bestFitnessOverall = this.fitnessScores[0];
 
         for(let i = 1; i < this.populationSize; i++) {
@@ -37,6 +36,7 @@ class GeneticAlgorithm {
         this.generationCount = 0;
     }
 
+    //fitness function (number of queens pairs that attack)
     calculateFitness(individual) {
         if (!individual || individual.length !== this.boardSize) return (this.boardSize * (this.boardSize - 1)) / 2 + 1;
         let attackingPairs = 0;
@@ -53,6 +53,7 @@ class GeneticAlgorithm {
         return attackingPairs;
     }
 
+    //selecting parents for reproduction
     selection() {
         let parents = [];
         const tournamentSize = Math.min(5, this.populationSize);
@@ -85,6 +86,7 @@ class GeneticAlgorithm {
         return parents; 
     }
 
+    //crossover between 2 parents to make 2 childern
     crossover(parent1, parent2) {
         const child1 = [...parent1];
         const child2 = [...parent2];
@@ -98,6 +100,7 @@ class GeneticAlgorithm {
         return [child1, child2];
     }
 
+    //mutation function
     mutation(individual, mutationRate = 0.15) { 
         if (Math.random() < mutationRate) {
             if (this.boardSize > 0) {
@@ -109,16 +112,15 @@ class GeneticAlgorithm {
         return individual;
     }
 
-    // MODIFIED runEvolution to pass population data to callback
+    // running genetic algorithm
     async runEvolution(maxGenerations = 200, targetFitness = 0, onGenerationCallback = null) {
-        this.initializePopulation(); // Initializes population and fitnessScores
+        this.initializePopulation();
         this.generationCount = 0;
 
-        // Initial callback for generation 0
         if (onGenerationCallback) {
             onGenerationCallback(
                 this.generationCount,
-                this.population.map(ind => [...ind]), // Send copies of individuals
+                this.population.map(ind => [...ind]),
                 [...this.fitnessScores],
                 this.bestSolutionOverall ? [...this.bestSolutionOverall] : null,
                 this.bestFitnessOverall
@@ -130,14 +132,14 @@ class GeneticAlgorithm {
         }
 
 
-        for (let gen = 1; gen <= maxGenerations; gen++) { // Start gen from 1 as gen 0 is initial population
+        for (let gen = 1; gen <= maxGenerations; gen++) {
             if (this.main && this.main.stopProcess) {
                 console.log("Genetic Algorithm evolution stopped by user.");
                 return this.bestSolutionOverall; 
             }
             this.generationCount = gen;
             
-            // 1. Create new generation
+            //creating new generation
             let selectedParents = this.selection();
             let newPopulation = [];
             for (let i = 0; i < this.populationSize; i += 2) {
@@ -159,7 +161,6 @@ class GeneticAlgorithm {
             }
             this.population = newPopulation;
 
-            // 2. Evaluate new population
             this.fitnessScores = this.population.map(ind => this.calculateFitness(ind));
             for (let i = 0; i < this.populationSize; i++) {
                 if (this.fitnessScores[i] < this.bestFitnessOverall) {
@@ -168,26 +169,24 @@ class GeneticAlgorithm {
                 }
             }
             
-            // 3. Call the callback with current generation's info
             if (onGenerationCallback) {
                 onGenerationCallback(
                     gen,
-                    this.population.map(ind => [...ind]), // Send copies of individuals
+                    this.population.map(ind => [...ind]), // Sending population individuals
                     [...this.fitnessScores],
                     this.bestSolutionOverall ? [...this.bestSolutionOverall] : null,
                     this.bestFitnessOverall
                 );
             }
 
-            // 4. Check for solution
+            //checking for solution
             if (this.bestFitnessOverall === targetFitness) {
                 console.log(`Genetic Algorithm: Solution found in generation ${gen} with fitness ${this.bestFitnessOverall}`);
                 return this.bestSolutionOverall;
             }
 
-            // 5. Yield control
             if (this.main) { 
-                await this.main.sleep(10); // Slightly longer sleep to make updates visible
+                await this.main.sleep(10);
             }
         }
 
@@ -195,6 +194,7 @@ class GeneticAlgorithm {
         return this.bestSolutionOverall;
     }
 
+    //returing the best solution
     getBestSolution1D() {
         return this.bestSolutionOverall;
     }

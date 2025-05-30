@@ -1,9 +1,10 @@
 class backtracking {
-    
+    //constructor
     constructor(main) {
         this.main = main; 
     }
 
+    //checking if placing queen is safe
     isSafe(state, row, col) {
         for (let i = 0; i < row; i++) {
             if (state[i] === col || Math.abs(state[i] - col) === Math.abs(i - row)) {
@@ -13,6 +14,7 @@ class backtracking {
         return true;
     }
 
+    //checking if the parameter state is valid (queens don't attack each other)
     stateIsValid(state) {
         for (let i = 0; i < state.length; i++) {
             if (state[i] === -1) continue;
@@ -26,10 +28,12 @@ class backtracking {
         return true;
     }
 
+    //checking N queens are placed on the board
     stateIsComplete(state) {
         return state.every(val => val !== -1);
     }
 
+    //checking if 2 states are equal
     arraysEqual(a, b) {
         if (!a || !b || a.length !== b.length) return false;
         for (let i = 0; i < a.length; i++) {
@@ -38,6 +42,7 @@ class backtracking {
         return true;
     }
 
+    //running backtracking algorithm
     async solve(state, row) {
         if (this.main.stopProcess) {
             return false;

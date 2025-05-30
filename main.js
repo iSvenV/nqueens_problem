@@ -1,4 +1,5 @@
 class main {
+    //constructor
     constructor() {
         this.n = 0;
         this.initialState = [];
@@ -12,10 +13,12 @@ class main {
         this.appElement = document.getElementById("app");
     }
 
+    //clearing page elements
     clearApp() {
         this.appElement.innerHTML = "";
     }
 
+    //creating elements
     createElement(tag, text, className) {
         const el = document.createElement(tag);
         if (text) el.innerText = text;
@@ -23,10 +26,12 @@ class main {
         return el;
     }
 
+    //delay function (used to change backtracking speed)
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    //function to pause backtracking algorithm
     async sleepWithPause(ms) {
         let elapsed = 0;
         const step = 50; 
@@ -46,6 +51,7 @@ class main {
         }
     }
 
+    //toggle pause/resume
     togglePause() {
         this.paused = !this.paused;
         const pauseButton = document.getElementById("pauseButton");
@@ -54,6 +60,7 @@ class main {
         }
     }
 
+    //generating chessboard for backtracking and mini-chessboards for GA
     createBoard(N, containerId = "boardContainer", cellClassName = "cell", isMainBoard = true) {
         const boardContainer = document.getElementById(containerId);
         if (!boardContainer) {
@@ -92,6 +99,7 @@ class main {
         return boardCells;
     }
 
+    //updating board based on given state
     updateBoardDisplay(state, boardCells = null, boardSize = 0, isMainBoard = true) {
         const currentCells = isMainBoard ? this.cells : boardCells;
         const currentN = isMainBoard ? this.n : boardSize;
@@ -126,6 +134,7 @@ class main {
         }
     }
 
+    //page 1 : selecting N
     page1_initialN() {
         this.clearApp();
         this.paused = false; 
@@ -136,8 +145,8 @@ class main {
         const nInput = this.createElement("input");
         nInput.type = "number";
         nInput.placeholder = "Enter N";
-        nInput.min = "4";
-        nInput.max = "8";
+        nInput.min = "4"; // N less than 4 cannot be solved
+        nInput.max = "8"; // N greater than 8 not optimal 
         nInput.value = this.n > 0 ? this.n.toString() : "4";
         controlsDiv.appendChild(nInput);
 
@@ -153,6 +162,7 @@ class main {
         this.appElement.appendChild(this.createElement("div", "", "message"));
     }
 
+    //page 2 : setting up initial state
     page2_initialSetup() {
         this.clearApp();
         this.paused = false;
@@ -194,6 +204,7 @@ class main {
         this.appElement.appendChild(backBtn);
     }
 
+    //page 3 : setting up final state
     page3_finalSetup() {
         this.clearApp();
         this.paused = false; 
@@ -239,6 +250,7 @@ class main {
         };
         this.appElement.appendChild(setFinalBtn);
 
+        // not setting final state
         const noFinalBtn = this.createElement("button", "No Final State");
         noFinalBtn.onclick = () => {
             this.finalState = null; 
@@ -251,6 +263,7 @@ class main {
         this.appElement.appendChild(backBtn);
     }
 
+    // page 4 : choosing algorithm
     page4_algorithm() {
         this.clearApp();
         this.paused = false;
@@ -279,6 +292,7 @@ class main {
         this.appElement.appendChild(backToPage3Btn);
     }
 
+    // page 5 backtracking : solution process using backtracking algorithm
     page5_backtrack() {
         this.clearApp();
         this.paused = false; 
@@ -379,6 +393,7 @@ class main {
         }, 500);
     }
 
+    //page 5 genetic : solution process using Genetic Algorithm
     async page5_genetic() {
         this.clearApp();
         this.paused = false; 
@@ -494,6 +509,7 @@ class main {
     }
 }
 
+// Main entry point when the window loads
 window.onload = () => {
     const app = new main();
     app.page1_initialN();
