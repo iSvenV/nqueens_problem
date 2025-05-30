@@ -7,7 +7,7 @@ class main {
         this.delay = 300;
         this.paused = false;
         this.stopProcess = false;
-        this.solver = new backtracking(this);
+        this.solver = new backtracking(this); //default solver is backtracking
         this.appElement = document.getElementById("app");
     }
 
@@ -30,7 +30,7 @@ class main {
         let elapsed = 0;
         const step = 50; 
         while (elapsed < ms) {
-            if (this.stopProcess) return; // <<< ADD THIS CHECK to break out of the delay loop
+            if (this.stopProcess) return;
             if (this.paused) {
                 await this.sleep(step);
             } else {
@@ -39,9 +39,8 @@ class main {
                 elapsed += delta;
             }
         }
-        // Also check after the main delay loop, in case it was paused for a long time
         while (this.paused) {
-            if (this.stopProcess) return; // <<< ADD THIS CHECK to break out of the pause loop
+            if (this.stopProcess) return;
             await this.sleep(step);
         }
     }
@@ -248,16 +247,64 @@ class main {
         buttonContainer.appendChild(backtrackBtn);
 
         const gaBtn = this.createElement("button", "Genetic");
-        gaBtn.onclick = () => {
-            alert("GA nadarim!");
+        const backToPage3Btn = this.createElement("button", "Back");
+
+        gaBtn.onclick = async () => {
+            const feedbackP = this.createElement("p", "Genetic Algorithm running...");
+            this.appElement.appendChild(feedbackP);
+            
+            // Disable buttons during GA
+            backtrackBtn.disabled = true;
+            gaBtn.disabled = true;
+            backToPage3Btn.disabled = true;
+
+            const populationSize = 100; 
+            const maxGenerations = 500; 
+            const geneticSolver = new genetic(populationSize, this.n, this, this.initialState);
+            
+            this.stopProcess = false;
+            const solution1D = await geneticSolver.runEvolution(maxGenerations); 
+
+            backtrackBtn.disabled = false;
+            gaBtn.disabled = false;
+            backToPage3Btn.disabled = false;
+
+            if (feedbackP.parentNode === this.appElement) {
+                this.appElement.removeChild(feedbackP);
+            }
+
+            if (this.stopProcess) {
+                console.log("GA was stopped by user before completion.");
+                const bestSoFar = geneticSolver.getBestSolution1D();
+                if (bestSoFar) {
+                    this.updateBoardDisplay(bestSoFar);
+                    alert("GA stopped. Displaying best attempt found so far.");
+                } else {
+                    this.updateBoardDisplay(this.initialState);
+                    alert("GA stopped. No intermediate solution to display.");
+                }
+                return;
+            }
+
+            if (solution1D && geneticSolver.calculateFitness(solution1D) === 0) {
+                alert("Genetic Algorithm found a solution!");
+                this.updateBoardDisplay(solution1D);
+            } else {
+                alert("Genetic Algorithm did not find a perfect solution within the generation limit. Displaying best attempt found.");
+                const bestSolution = geneticSolver.getBestSolution1D();
+                if (bestSolution) {
+                    this.updateBoardDisplay(bestSolution);
+                } else {
+                    this.updateBoardDisplay(this.initialState); 
+                }
+            }
         };
         buttonContainer.appendChild(gaBtn);
         this.appElement.appendChild(buttonContainer);
 
-
-        const backBtn = this.createElement("button", "Back");
-        backBtn.onclick = () => this.page3_finalSetup();
-        this.appElement.appendChild(backBtn);
+        backToPage3Btn.innerText = "Back";
+        backToPage3Btn.onclick = () => this.page3_finalSetup();
+        this.appElement.appendChild(backToPage3Btn);
     }
 
     page5_solution() {
