@@ -30,6 +30,7 @@ class main {
         let elapsed = 0;
         const step = 50; 
         while (elapsed < ms) {
+            if (this.stopProcess) return; // <<< ADD THIS CHECK to break out of the delay loop
             if (this.paused) {
                 await this.sleep(step);
             } else {
@@ -38,7 +39,9 @@ class main {
                 elapsed += delta;
             }
         }
+        // Also check after the main delay loop, in case it was paused for a long time
         while (this.paused) {
+            if (this.stopProcess) return; // <<< ADD THIS CHECK to break out of the pause loop
             await this.sleep(step);
         }
     }
@@ -112,7 +115,7 @@ class main {
         nInput.type = "number";
         nInput.placeholder = "Enter N";
         nInput.min = "1";
-        nInput.value = this.n > 0 ? this.n.toString() : "8";
+        nInput.value = this.n > 0 ? this.n.toString() : "6";
         controlsDiv.appendChild(nInput);
 
         const createBtn = this.createElement("button", "Create Board");
@@ -213,28 +216,56 @@ class main {
                 alert("Invalid final state: Some queens are threatening each other.");
                 return;
             }
-            this.page4_solution();
+            this.page4_algorithm();
         };
         this.appElement.appendChild(setFinalBtn);
 
-        const noFinalBtn = this.createElement("button", "No Specific Final State");
+        const noFinalBtn = this.createElement("button", "No Final State");
         noFinalBtn.onclick = () => {
             this.finalState = null; 
-            this.page4_solution();
+            this.page4_algorithm();
         };
         this.appElement.appendChild(noFinalBtn);
 
-        const backBtn = this.createElement("button", "Back to Initial Setup");
+        const backBtn = this.createElement("button", "Back");
         backBtn.onclick = () => this.page2_initialSetup(); 
         this.appElement.appendChild(backBtn);
     }
 
-    page4_solution() {
+    page4_algorithm() {
+        this.clearApp();
+        this.paused = false;
+
+        this.appElement.appendChild(this.createElement("h1", "3. Select Algorithm"));
+        this.appElement.appendChild(this.createElement("p", "Choose an algorithm"));
+
+        const buttonContainer = this.createElement("div", "", "controls"); 
+
+        const backtrackBtn = this.createElement("button", "Backtracking");
+        backtrackBtn.onclick = () => {
+            this.page5_solution();
+        };
+        buttonContainer.appendChild(backtrackBtn);
+
+        const gaBtn = this.createElement("button", "Genetic");
+        gaBtn.onclick = () => {
+            alert("GA nadarim!");
+        };
+        buttonContainer.appendChild(gaBtn);
+        this.appElement.appendChild(buttonContainer);
+
+
+        const backBtn = this.createElement("button", "Back");
+        backBtn.onclick = () => this.page3_finalSetup();
+        this.appElement.appendChild(backBtn);
+    }
+
+    page5_solution() {
         this.clearApp();
         this.paused = false; 
         this.stopProcess = false; 
 
-        this.appElement.appendChild(this.createElement("h1", "Solving Process"));
+        this.appElement.appendChild(this.createElement("h1", ""));
 
         const speedDiv = this.createElement("div", "", "speed-controls");
         const speedLabel = this.createElement("label", "Speed: ");
@@ -275,7 +306,7 @@ class main {
         this.updateBoardDisplay(solutionState);
 
         const backBtnDiv = this.createElement("div"); 
-        const backBtn = this.createElement("button", "Back to Final State Setup");
+        const backBtn = this.createElement("button", "Back");
         
         backBtn.onclick = () => {
             this.stopProcess = true; 
@@ -284,7 +315,7 @@ class main {
             if (pauseButton) {
                 pauseButton.textContent = "Pause"; 
             }
-            this.page3_finalSetup();
+            this.page4_algorithm();
         };
         backBtnDiv.appendChild(backBtn);
         this.appElement.appendChild(backBtnDiv);

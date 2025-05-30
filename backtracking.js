@@ -1,7 +1,7 @@
 class backtracking {
     
-    constructor(appManager) {
-        this.appManager = appManager; 
+    constructor(main) {
+        this.main = main; 
     }
 
     isSafe(state, row, col) {
@@ -39,53 +39,53 @@ class backtracking {
     }
 
     async solve(state, row) {
-        if (this.appManager.stopSolver) {
+        if (this.main.stopProcess) {
             return false;
         }
 
-        const N = this.appManager.globalN;
-        const userFinalState = this.appManager.userFinalState;
+        const N = this.main.n;
+        const finalState = this.main.finalState;
 
         if (row >= N) { 
-            if (userFinalState && !this.arraysEqual(state, userFinalState)) {
+            if (finalState && !this.arraysEqual(state, finalState)) {
                 return false; 
             }
-            if (!this.appManager.stopSolver) { 
+            if (!this.main.stopProcess) { 
                 alert("Solution found!");
             }
             return true; 
         }
 
         for (let col = 0; col < N; col++) {
-            if (this.appManager.stopSolver) {
+            if (this.main.stopProcess) {
                 return false;
             }
 
-            if (this.appManager.paused) {
-                await this.appManager.sleepWithPause(0); 
-                if (this.appManager.stopSolver) { 
+            if (this.main.paused) {
+                await this.main.sleepWithPause(0); 
+                if (this.main.stopProcess) { 
                     return false;
                 }
             }
 
-            const cell = this.appManager.cells[row][col];
+            const cell = this.main.cells[row][col];
             const originalColor = ((row + col) % 2 === 0) ? "#ebecd0" : "#789454";
 
             cell.style.backgroundColor = "yellow"; 
-            await this.appManager.sleepWithPause(this.appManager.currentDelay);
+            await this.main.sleepWithPause(this.main.delay);
 
-            if (this.appManager.stopSolver) {
+            if (this.main.stopProcess) {
                 cell.style.backgroundColor = originalColor; 
                 return false;
             }
 
             if (this.isSafe(state, row, col)) {
                 state[row] = col;
-                this.appManager.updateBoardDisplay(state);
+                this.main.updateBoardDisplay(state);
                 cell.style.backgroundColor = originalColor; 
-                await this.appManager.sleepWithPause(this.appManager.currentDelay);
+                await this.main.sleepWithPause(this.main.delay);
 
-                if (this.appManager.stopSolver) { 
+                if (this.main.stopProcess) { 
                     return false; 
                 }
 
@@ -93,29 +93,29 @@ class backtracking {
                     return true; 
                 }
 
-                if (this.appManager.stopSolver) { 
+                if (this.main.stopProcess) { 
                     return false;
                 }
                 
-                if (this.appManager.paused) await this.appManager.sleepWithPause(0);
-                if (this.appManager.stopSolver) { 
+                if (this.main.paused) await this.main.sleepWithPause(0);
+                if (this.main.stopProcess) { 
                     return false; 
                 }
 
                 cell.style.backgroundColor = "red"; 
-                await this.appManager.sleepWithPause(this.appManager.currentDelay);
+                await this.main.sleepWithPause(this.main.delay);
                 
-                if (this.appManager.stopSolver) { 
+                if (this.main.stopProcess) { 
                     cell.style.backgroundColor = originalColor; 
                     return false;
                 }
 
                 state[row] = -1; 
-                this.appManager.updateBoardDisplay(state);
+                this.main.updateBoardDisplay(state);
                 cell.style.backgroundColor = originalColor; 
-                await this.appManager.sleepWithPause(this.appManager.currentDelay);
+                await this.main.sleepWithPause(this.main.delay);
                 
-                if (this.appManager.stopSolver) { return false; }
+                if (this.main.stopProcess) { return false; }
 
             } else { 
                 cell.style.backgroundColor = originalColor; 
