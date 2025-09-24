@@ -1,7 +1,7 @@
 # N-Queens Problem 
 
 A JavaScript application that solves the classic N-Queens problem using backtracking and genetic algorithm.  
-Click [here](https://isvenv.github.io/temp/) to run the application.
+Click [here](https://isvenv.github.io/nqueens_problem/) to run the application.
 
 ---
 
